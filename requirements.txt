@@ -2,9 +2,10 @@ fastapi==0.111.1
 uvicorn[standard]==0.30.1
 python-multipart==0.0.9
 aiofiles==24.1.0
-httpx>=0.26,<0.28        # ✅ works with both supabase 2.4.0 and FastAPI
+httpx==0.25.2
 python-dotenv==1.0.1
 python-docx==0.8.11
 reportlab==4.2.0
 supabase==2.4.0
+gotrue==2.8.1
 pydantic==2.9.2
