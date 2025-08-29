@@ -1,3 +1,6 @@
+from fastapi import APIRouter
+router = APIRouter()
+
 @router.post("/convert")
 async def convert_ocr(
     file: UploadFile = File(...),

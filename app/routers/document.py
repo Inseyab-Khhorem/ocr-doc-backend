@@ -1,3 +1,7 @@
+from fastapi import APIRouter
+router = APIRouter()
+
+
 @router.post("/generate")
 async def generate_document(payload: GenerateRequest, request: Request):
     # Extract JWT from headers

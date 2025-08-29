@@ -1,3 +1,7 @@
+from fastapi import APIRouter
+router = APIRouter()
+
+
 @router.get("/list")
 def list_records(user_id: str = Query(..., description="User ID to fetch records for"), request: Request = None):
     token = request.headers.get("Authorization")
