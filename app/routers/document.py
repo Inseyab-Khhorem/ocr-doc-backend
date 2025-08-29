@@ -1,22 +1,10 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from app.services.groq import groq_generate_text
-from app.utils.files import write_text_to_docx, write_text_to_pdf
-from app.services.supabase_client import supabase
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
-FILES_BASE_URL = os.getenv("FILES_BASE_URL", "http://localhost:8000/files")
-
-router = APIRouter()
-
-class GenerateRequest(BaseModel):
-    user_id: str
-    prompt: str
-
 @router.post("/generate")
-async def generate_document(payload: GenerateRequest):
+async def generate_document(payload: GenerateRequest, request: Request):
+    # Extract JWT from headers
+    token = request.headers.get("Authorization")
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing authorization token")
+
     try:
         generated_text = await groq_generate_text(payload.prompt)
     except Exception as e:
@@ -31,10 +19,14 @@ async def generate_document(payload: GenerateRequest):
     record = {
         "id": docx_id,
         "user_id": payload.user_id,
-        "action_type": "Generation",
-        "file_url": f"docx:{docx_url};pdf:{pdf_url}"
+        "action": "Document Generation",
+        "output_file_url_docx": docx_url,
+        "output_file_url_pdf": pdf_url,
+        "prompt": payload.prompt,
     }
+
     try:
+        supabase.auth.set_auth(token.replace("Bearer ", ""))
         supabase.table("records").insert(record).execute()
     except Exception as e:
         print("Failed saving document record to Supabase:", e)

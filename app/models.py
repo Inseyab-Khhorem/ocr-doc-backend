@@ -7,6 +7,9 @@ class GenerateRequest(BaseModel):
 class RecordsListResponse(BaseModel):
     id: str
     user_id: str
-    action_type: str
-    timestamp: str
-    file_url: str
+    action: str   # matches DB column
+    input_file_url: str | None = None
+    output_file_url_docx: str | None = None
+    output_file_url_pdf: str | None = None
+    prompt: str | None = None
+    created_at: str
