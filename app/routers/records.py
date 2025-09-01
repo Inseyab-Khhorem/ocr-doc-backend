@@ -1,16 +1,22 @@
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
+from app.supabase_client import supabase
+
 router = APIRouter()
 
-
-@router.get("/list")
-def list_records(user_id: str = Query(..., description="User ID to fetch records for"), request: Request = None):
-    token = request.headers.get("Authorization")
-    if not token:
-        raise HTTPException(status_code=401, detail="Missing authorization token")
-
+@router.get("/records/{user_id}")
+async def get_records(user_id: str):
     try:
-        supabase.auth.set_auth(token.replace("Bearer ", ""))
-        res = supabase.table("records").select("*").eq("user_id", user_id).execute()
+        response = supabase.table("records").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
+        records = response.data or []
+
+        # Ensure output_file_url is returned as JSON string
+        for rec in records:
+            if isinstance(rec.get("output_file_url"), dict):
+                import json
+                rec["output_file_url"] = json.dumps(rec["output_file_url"])
+
+        return JSONResponse(content=records)
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    return {"data": res.data}
+        return JSONResponse(content={"error": str(e)}, status_code=500)

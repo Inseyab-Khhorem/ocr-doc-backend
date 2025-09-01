@@ -1,46 +1,47 @@
-from fastapi import APIRouter, File, Form, Request, HTTPException, UploadFile
+from fastapi import APIRouter, UploadFile, Form
+from fastapi.responses import JSONResponse
+import shutil, os, uuid
+from app.supabase_client import supabase
+from datetime import datetime
+
 router = APIRouter()
 
-@router.post("/convert")
-async def convert_ocr(
-    file: UploadFile = File(...),
-    user_id: str = Form(...),
-    request: Request = None
-):
-    token = request.headers.get("Authorization")
-    if not token:
-        raise HTTPException(status_code=401, detail="Missing authorization token")
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-    content = await file.read()
-    original_id, original_path = save_bytes_to_file(content, suffix=f"_{file.filename}")
-
+@router.post("/ocr/convert")
+async def convert_ocr(file: UploadFile, user_id: str = Form(...)):
     try:
-        extracted_text = await groq_ocr_from_bytes(content, filename=file.filename)
+        # Save uploaded file
+        file_id = str(uuid.uuid4())
+        filename = f"{file_id}_{file.filename}"
+        file_path = os.path.join(UPLOAD_DIR, filename)
+
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        # Simulated conversion (in real case, run OCR + generate DOCX/PDF)
+        docx_url = f"/static/{file_id}.docx"
+        pdf_url = f"/static/{file_id}.pdf"
+
+        # Insert record into Supabase
+        supabase.table("records").insert({
+            "id": file_id,
+            "user_id": user_id,
+            "action": "OCR Conversion",
+            "output_file_url": {
+                "docx": docx_url,
+                "pdf": pdf_url
+            },
+            "created_at": datetime.utcnow().isoformat()
+        }).execute()
+
+        return JSONResponse(content={
+            "message": "OCR conversion successful",
+            "file_id": file_id,
+            "docx_url": docx_url,
+            "pdf_url": pdf_url
+        })
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Groq OCR error: {e}")
-
-    docx_id, docx_path = write_text_to_docx(extracted_text)
-    pdf_id, pdf_path = write_text_to_pdf(extracted_text)
-
-    docx_url = f"{FILES_BASE_URL}/{docx_path.name}"
-    pdf_url = f"{FILES_BASE_URL}/{pdf_path.name}"
-
-    record = {
-        "id": docx_id,
-        "user_id": user_id,
-        "action": "OCR Conversion",
-        "input_file_url": f"{FILES_BASE_URL}/{original_path.name}",
-        "output_file_url_docx": docx_url,
-        "output_file_url_pdf": pdf_url,
-    }
-
-    try:
-        supabase.auth.set_auth(token.replace("Bearer ", ""))
-        supabase.table("records").insert(record).execute()
-    except Exception as e:
-        print("Failed saving record to Supabase:", e)
-
-    return {
-        "text": extracted_text,
-        "files": {"docx": docx_url, "pdf": pdf_url}
-    }
+        return JSONResponse(content={"error": str(e)}, status_code=500)

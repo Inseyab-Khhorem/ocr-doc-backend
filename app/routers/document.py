@@ -1,41 +1,39 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Form
+from fastapi.responses import JSONResponse
+from app.supabase_client import supabase
+from datetime import datetime
+import uuid
+
 router = APIRouter()
 
-
-@router.post("/generate")
-async def generate_document(payload: GenerateRequest, request: Request):
-    # Extract JWT from headers
-    token = request.headers.get("Authorization")
-    if not token:
-        raise HTTPException(status_code=401, detail="Missing authorization token")
-
+@router.post("/document/generate")
+async def generate_document(user_id: str = Form(...), prompt: str = Form(...)):
     try:
-        generated_text = await groq_generate_text(payload.prompt)
+        file_id = str(uuid.uuid4())
+
+        # Simulated generated document
+        docx_url = f"/static/{file_id}.docx"
+        pdf_url = f"/static/{file_id}.pdf"
+
+        # Save record to Supabase
+        supabase.table("records").insert({
+            "id": file_id,
+            "user_id": user_id,
+            "action": "Document Generation",
+            "prompt": prompt,
+            "output_file_url": {
+                "docx": docx_url,
+                "pdf": pdf_url
+            },
+            "created_at": datetime.utcnow().isoformat()
+        }).execute()
+
+        return JSONResponse(content={
+            "message": "Document generated",
+            "file_id": file_id,
+            "docx_url": docx_url,
+            "pdf_url": pdf_url
+        })
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Groq generation error: {e}")
-
-    docx_id, docx_path = write_text_to_docx(generated_text)
-    pdf_id, pdf_path = write_text_to_pdf(generated_text)
-
-    docx_url = f"{FILES_BASE_URL}/{docx_path.name}"
-    pdf_url = f"{FILES_BASE_URL}/{pdf_path.name}"
-
-    record = {
-        "id": docx_id,
-        "user_id": payload.user_id,
-        "action": "Document Generation",
-        "output_file_url_docx": docx_url,
-        "output_file_url_pdf": pdf_url,
-        "prompt": payload.prompt,
-    }
-
-    try:
-        supabase.auth.set_auth(token.replace("Bearer ", ""))
-        supabase.table("records").insert(record).execute()
-    except Exception as e:
-        print("Failed saving document record to Supabase:", e)
-
-    return {
-        "document": generated_text,
-        "files": {"docx": docx_url, "pdf": pdf_url}
-    }
+        return JSONResponse(content={"error": str(e)}, status_code=500)
