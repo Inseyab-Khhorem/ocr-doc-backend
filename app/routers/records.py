@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from app.supabase_client import supabase
+from app.services.supabase_client import supabase
 
 router = APIRouter()
 

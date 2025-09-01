@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, Form
 from fastapi.responses import JSONResponse
 import shutil, os, uuid
-from app.supabase_client import supabase
+from app.services.supabase_client import supabase
 from datetime import datetime
 
 router = APIRouter()

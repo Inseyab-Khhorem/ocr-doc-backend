@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Form
 from fastapi.responses import JSONResponse
-from app.supabase_client import supabase
+from app.services.supabase_client import supabase
 from datetime import datetime
 import uuid
 
