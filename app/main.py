@@ -6,14 +6,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from app.routers import auth, ocr, document, records  # package import via app/routers/__init__.py
+from app.routers import auth, ocr, document, records
 
-app = FastAPI(title="FastAPI Groq + Supabase Backend")
+app = FastAPI(title="DocuFlow Backend")
 
-# ✅ CORS settings
+# CORS
 origins = [
-    "https://inseyab-doc.netlify.app",  # Netlify frontend
-    "http://localhost:5173",            # Vite local dev server
+    "https://inseyab-doc.netlify.app",
+    "http://localhost:5173",
+    "http://localhost:3000"
 ]
 
 app.add_middleware(
@@ -24,21 +25,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ Create tmp dir if missing
-TMP_DIR = os.path.join(os.path.dirname(__file__), "..", "tmp_files")
-TMP_DIR = os.path.abspath(TMP_DIR)
+# Create tmp directory
+TMP_DIR = os.path.join(os.path.dirname(__file__), "tmp_files")
 os.makedirs(TMP_DIR, exist_ok=True)
 
-# ✅ Mount static file serving for generated files
+# Mount static files
 app.mount("/files", StaticFiles(directory=TMP_DIR), name="files")
 
-# ✅ Routers
+# Include routers
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(ocr.router, prefix="/ocr", tags=["ocr"])
 app.include_router(document.router, prefix="/document", tags=["document"])
 app.include_router(records.router, prefix="/records", tags=["records"])
 
-# ✅ Health check root
 @app.get("/")
 def root():
-    return {"status": "ok", "message": "FastAPI Groq+Supabase backend is running"}
+    return {"status": "ok", "message": "DocuFlow backend running"}
+
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
