@@ -11,9 +11,9 @@ class LoginRequest(BaseModel):
 async def admin_login(request: LoginRequest):
     if request.email == "khhorem.khan@raqmiyat.com" and request.password == "@Inseyab123":
         return {
-            "success": True,
-            "token": "admin_mock_token",
-            "user": {"email": request.email, "role": "admin"}
+            "data": {
+                "access_token": "admin_mock_token"
+            }
         }
     else:
         raise HTTPException(status_code=401, detail="Invalid credentials")
