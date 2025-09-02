@@ -1,3 +1,8 @@
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel  # ADDED MISSING IMPORT
+
+router = APIRouter()  # ADDED MISSING LINE
+
 class LoginRequest(BaseModel):
     email: str
     password: str
