@@ -18,8 +18,8 @@ async def convert_file(file: UploadFile):
             "success": True,
             "text": f"Mock extracted text from {file.filename}. File size: {len(content)} bytes",
             "files": {
-                "docx": f"/download/mock_{file.filename}.docx",
-                "pdf": f"/download/mock_{file.filename}.pdf"
+                "docx": f"/files/mock_{file.filename}.docx",
+                "pdf": f"/files/mock_{file.filename}.pdf"
             }
         }
     except Exception as e:
